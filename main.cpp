@@ -2,7 +2,6 @@
 #include <GLFW/glfw3.h>
 
 #include <iostream>
-
 int main() {
     // GLFW エラーのコールバック
     glfwSetErrorCallback(
@@ -40,7 +39,7 @@ int main() {
         return false;
     }
 
-    // VSyncを待つ
+    // VSyncを設定
     glfwSwapInterval(1);
 
     // OpenGL エラーのコールバック
@@ -54,11 +53,14 @@ int main() {
                     << std::endl;
         },
         0);
-
+    uint8_t frames = 0;
     // メインループ
     while (glfwWindowShouldClose(window) == GL_FALSE) {
         glfwSwapBuffers(window);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glClearColor(frames / 255.0f, frames / 255.0f, frames / 255.0f, 0.0f);
         glfwPollEvents();
+        frames++;
     }
 
     glfwTerminate();
