@@ -75,11 +75,11 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>$(SolutionDir)glfw\include\;$(SolutionDir)glew\include\;$(SolutionDir)glm\;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)glfw\lib-vc2022;$(SolutionDir)glew\lib\Release\x64\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)glfw\lib\;$(SolutionDir)glew\lib\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(SolutionDir)glfw\include\;$(SolutionDir)glew\include\;$(SolutionDir)glm\;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)glfw\lib-vc2022;$(SolutionDir)glew\lib\Release\x64\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)glfw\lib\;$(SolutionDir)glew\lib\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
