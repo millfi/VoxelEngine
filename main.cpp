@@ -1,11 +1,13 @@
-#include <chrono>
-#include "settings.hpp"
+#include "common.hpp"
 #include <iostream>
-
+#include <array>
+#include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <cmath>
 namespace fs = std::filesystem;
 
+ 
 GLuint ShaderProgram(fs::path vertShPath, fs::path fragShPath)
 {
     std::ifstream vertIfs(vertShPath, std::ios::binary);
@@ -85,14 +87,12 @@ class VoxelEngine {
     chrono_time::time_point delta_time;
     bool is_running;
     GLFWwindow* window;
-
-
+    float time;
+    std::vector<float> triangleVertices;
+    std::vector<float> squareVertices;
     GLuint program;
-    GLuint vao;
-    GLuint verticesVbo;
-    GLuint colorVbo;
-    std::vector<glm::vec3> vertices;
-    std::vector<glm::vec3> color;
+    std::array<GLuint, 2> VAOs;
+    std::array<GLuint, 2> VBOs;
 public:
     VoxelEngine() :
         clock(chrono_time::now()), delta_time(VoxelEngine::clock - VoxelEngine::clock), is_running(true)
@@ -111,7 +111,7 @@ public:
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
         // リサイズ不可
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
         window = glfwCreateWindow(width, height, "Game", nullptr, nullptr);
         if (window == nullptr) {
@@ -149,44 +149,66 @@ public:
         // VSyncを設定
         glfwSwapInterval(1);
         
-
-        vertices = {
-           glm::vec3(0.0f, 1.0f, 0.0f),
-           glm::vec3(-1.0f, -1.0f, 0.0f),
-           glm::vec3(1.0f, -1.0f, 0.0f)
-        };
-        color = {
-           glm::vec3(1.0f, 0.0f, 0.0f),
-           glm::vec3(0.0f, 1.0f, 0.0f),
-           glm::vec3(0.0f, 0.0f, 1.0f)
+        // メッシュデータ（頂点）
+        float triangleVertices[] = {
+             0.0f,  0.5f, 0.0f,
+            -0.5f, -0.5f, 0.0f,
+             0.5f, -0.5f, 0.0f,
         };
 
-        glGenVertexArrays(1, &vao);
-        glBindVertexArray(vao);
-        
-        glGenBuffers(1, &verticesVbo);
-        glBindBuffer(GL_ARRAY_BUFFER, verticesVbo);
-        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, static_cast<void*>(0));
+        float squareVertices[] = {
+            -0.1f,  0.1f, 0.0f,
+             0.1f,  0.1f, 0.0f,
+            -0.1f, -0.1f, 0.0f,
+             0.1f, -0.1f, 0.0f,
+        };
+
+        // VAOとVBOの設定
+
+        glGenVertexArrays(2, VAOs.data());
+        glGenBuffers(2, VBOs.data());
+
+        // 三角形
+        glBindVertexArray(VAOs[0]);
+        glBindBuffer(GL_ARRAY_BUFFER, VBOs[0]);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(triangleVertices), triangleVertices, GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
-
-        glGenBuffers(1, &colorVbo);
-        glBindBuffer(GL_ARRAY_BUFFER, colorVbo);
-        glBufferData(GL_ARRAY_BUFFER, color.size() * sizeof(glm::vec3), &color[0], GL_STATIC_DRAW);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, static_cast<void*>(0));
-        glEnableVertexAttribArray(1);
+        glBindVertexArray(0);
+        // 四角形
+        glBindVertexArray(VAOs[1]);
+        glBindBuffer(GL_ARRAY_BUFFER, VBOs[1]);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(squareVertices), squareVertices, GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+        glBindVertexArray(0);
 
         program = ShaderProgram("./shader.vert", "./shader.frag");
     }
 
     void update() {
         delta_time = chrono_time::now();
+        time = glfwGetTime();
     }
     void render() {
         glClear(GL_COLOR_BUFFER_BIT);
         glUseProgram(program);
-        glBindVertexArray(vao);
-        glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+        
+        
+        glBindVertexArray(VAOs.at(0));
+        glm::mat4 transform = glm::mat4(1.0f);
+        transform = glm::translate(transform, glm::vec3(std::sin(time), std::cos(-time), 0.0f));
+        unsigned int transformLoc = glGetUniformLocation(program, "transform");
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        //四角形の更新
+        glBindVertexArray(VAOs[1]);
+        transform = glm::mat4(1.0f);
+        transform = glm::rotate(transform, time, glm::vec3(0.0f, 0.0f, 1.0f));
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+        
 
         glfwSwapBuffers(window);
     }
